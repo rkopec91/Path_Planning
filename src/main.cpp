@@ -89,6 +89,14 @@ int main() {
           //   of the road.
           auto sensor_fusion = j[1]["sensor_fusion"];
 
+          bool car_front = false;
+          bool car_right = false;
+          bool car_left = false;
+
+          for (int i = 0; i < sensor_fusion.size(); i++) {
+            std::cout << sensor_fusion[i] << std::endl;
+          }
+
           json msgJson;
 
           vector<double> next_x_vals;
