@@ -51,7 +51,11 @@ int main() {
     map_waypoints_dy.push_back(d_y);
   }
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
+  int lane = 1;
+
+  double vel = 0.0;
+
+  h.onMessage([&vel, &lane, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
@@ -59,6 +63,7 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     if (length && length > 2 && data[0] == '4' && data[1] == '2') {
+
 
       auto s = hasData(data);
 
@@ -95,6 +100,34 @@ int main() {
 
           for (int i = 0; i < sensor_fusion.size(); i++) {
             std::cout << sensor_fusion[i] << std::endl;
+            int car_lane = -1;
+            if ( sensor_fusion[i][6] > 0 && sensor_fusion[i][6] < 4) {
+                car_lane = 0;
+            } else if ( sensor_fusion[i][6] > 4 && sensor_fusion[i][6] < 8) {
+                car_lane = 1;
+            } else if ( sensor_fusion[i][6] > 8 && sensor_fusion[i][6] < 12) {
+                car_lane = 2;
+            } else {
+                continue;
+            }
+
+            double vx = sensor_fusion[i][3];
+            double vy = sensor_fusion[i][4];
+            double check_speed = sqrt(vx*vx + vy*vy);
+            double s = sensor_fusion[i][5];
+            // Estimate car s position after executing previous trajectory.
+            s += ((double)previous_path_x.size()*0.02*check_speed);
+
+            if ( car_lane == lane ) {
+              // Car in our lane.
+              car_front |= s > car_s && s - car_s < 30;
+            } else if ( car_lane - lane == -1 ) {
+              // Car left
+              car_left |= car_s - 30 < s && car_s + 30 > s;
+            } else if ( car_lane - lane == 1 ) {
+              // Car right
+              car_right |= car_s - 30 < s && car_s + 30 > s;
+            }
           }
 
           json msgJson;
