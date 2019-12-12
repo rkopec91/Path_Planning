@@ -115,17 +115,13 @@ int main() {
             double vy = sensor_fusion[i][4];
             double check_speed = sqrt(vx*vx + vy*vy);
             double s = sensor_fusion[i][5];
-            // Estimate car s position after executing previous trajectory.
             s += ((double)previous_path_x.size()*0.02*check_speed);
 
             if ( car_lane == lane ) {
-              // Car in our lane.
               car_front |= s > car_s && s - car_s < 30;
             } else if ( car_lane - lane == -1 ) {
-              // Car left
               car_left |= car_s - 30 < s && car_s + 30 > s;
             } else if ( car_lane - lane == 1 ) {
-              // Car right
               car_right |= car_s - 30 < s && car_s + 30 > s;
             }
           }
