@@ -8,11 +8,14 @@
 #include "helpers.h"
 #include "json.hpp"
 #include "spline.h"
+#include "car.cpp"
 
 // for convenience
 using nlohmann::json;
 using std::string;
 using std::vector;
+
+Car car;
 
 int main() {
   uWS::Hub h;
@@ -51,11 +54,7 @@ int main() {
     map_waypoints_dy.push_back(d_y);
   }
 
-  int lane = 1;
-
-  double vel = 0.0;
-
-  h.onMessage([&vel, &lane, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
@@ -63,7 +62,6 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     if (length && length > 2 && data[0] == '4' && data[1] == '2') {
-
 
       auto s = hasData(data);
 
@@ -83,48 +81,16 @@ int main() {
           double car_yaw = j[1]["yaw"];
           double car_speed = j[1]["speed"];
 
-          // Previous path data given to the Planner
+          // Previous path data given to the car
           auto previous_path_x = j[1]["previous_path_x"];
           auto previous_path_y = j[1]["previous_path_y"];
-          // Previous path's end s and d values 
+          // Previous path's end s and d values
           double end_path_s = j[1]["end_path_s"];
           double end_path_d = j[1]["end_path_d"];
 
-          // Sensor Fusion Data, a list of all other cars on the same side 
+          // Sensor Fusion Data, a list of all other cars on the same side
           //   of the road.
           auto sensor_fusion = j[1]["sensor_fusion"];
-
-          bool car_front = false;
-          bool car_right = false;
-          bool car_left = false;
-
-          for (int i = 0; i < sensor_fusion.size(); i++) {
-            std::cout << sensor_fusion[i] << std::endl;
-            int car_lane = -1;
-            if ( sensor_fusion[i][6] > 0 && sensor_fusion[i][6] < 4) {
-                car_lane = 0;
-            } else if ( sensor_fusion[i][6] > 4 && sensor_fusion[i][6] < 8) {
-                car_lane = 1;
-            } else if ( sensor_fusion[i][6] > 8 && sensor_fusion[i][6] < 12) {
-                car_lane = 2;
-            } else {
-                continue;
-            }
-
-            double vx = sensor_fusion[i][3];
-            double vy = sensor_fusion[i][4];
-            double check_speed = sqrt(vx*vx + vy*vy);
-            double s = sensor_fusion[i][5];
-            s += ((double)previous_path_x.size()*0.02*check_speed);
-
-            if ( car_lane == lane ) {
-              car_front |= s > car_s && s - car_s < 30;
-            } else if ( car_lane - lane == -1 ) {
-              car_left |= car_s - 30 < s && car_s + 30 > s;
-            } else if ( car_lane - lane == 1 ) {
-              car_right |= car_s - 30 < s && car_s + 30 > s;
-            }
-          }
 
           json msgJson;
 
@@ -136,8 +102,126 @@ int main() {
            *   sequentially every .02 seconds
            */
 
-          
 
+          for (int i = 0; i < previous_path_x.size(); i++) {
+            next_x_vals.push_back(previous_path_x[i]);
+            next_y_vals.push_back(previous_path_y[i]);
+          }
+
+          vector<double> points_x;
+          vector<double> points_y;
+
+          double reference_x = car_x;
+          double reference_y = car_y;
+          double reference_yaw = deg2rad(car_yaw);
+          double reference_vel;
+          double x_value;
+          double y_value;
+
+          if(previous_path_x.size() < 2)
+          {
+            points_x.push_back(car_x - cos(car_yaw));
+            points_x.push_back(car_x);
+
+            points_y.push_back(car_y - sin(car_yaw));
+            points_y.push_back(car_y);
+
+            reference_vel = car_speed;
+          }
+          else
+          {
+            reference_x = previous_path_x[previous_path_x.size()-1];
+            reference_y = previous_path_y[previous_path_x.size()-1];
+
+            x_value = previous_path_x[previous_path_x.size()-2];
+            y_value = previous_path_y[previous_path_x.size()-2];
+
+            double x_differnece = reference_x-x_value;
+            double y_difference = reference_y-y_value;
+
+            reference_yaw = atan2(y_difference, x_differnece);
+            reference_vel = car.targetVehicleSpeed;
+
+            points_x.push_back(x_value);
+            points_x.push_back(reference_x);
+
+            points_y.push_back(y_value);
+            points_y.push_back(reference_y);
+          }
+
+          vector<double> frenet = getFrenet(reference_x, reference_y, reference_yaw, map_waypoints_x, map_waypoints_y);
+
+          double next_move = car.planLane(frenet[0], frenet[1], sensor_fusion);
+          double lane = car.currentLane;
+          double next_d = (lane * 4) + 2 + next_move;
+
+          int check_lane = car.calculateLane(next_d);
+          vector<double> front_vehicle = car.getClosestVehicle(frenet[0], check_lane, sensor_fusion, true);
+          vector<double> back_vehicle = car.getClosestVehicle(frenet[0], check_lane, sensor_fusion, false);
+
+          if (front_vehicle[0] < 10 or back_vehicle[0] < 10 or car.avgScores[check_lane] <= -5) {
+            next_d = (lane * 4) + 2;
+            if (check_lane != lane) {
+              car.targetVehicleSpeed = car.currentLeadVehicleSpeed;
+            }
+          }
+
+          vector <double> way_point1 = getXY(car_s+50, next_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          vector <double> way_point2 = getXY(car_s+100, next_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          vector <double> way_point3 = getXY(car_s+150, next_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+
+          points_x.push_back(way_point1[0]);
+          points_x.push_back(way_point2[0]);
+          points_x.push_back(way_point3[0]);
+
+          points_y.push_back(way_point1[1]);
+          points_y.push_back(way_point2[1]);
+          points_y.push_back(way_point3[1]);
+
+          if (points_x.size() > 2) {
+            for (int i = 0; i < points_x.size(); i++) {
+              points_x[i] = ((points_x[i] - reference_x)*cos(0-reference_yaw)-(points_y[i] - reference_y)*sin(0-reference_yaw));
+              points_y[i] = ((points_x[i] - reference_x)*sin(0-reference_yaw)+(points_y[i] - reference_y)*cos(0-reference_yaw));
+            }
+
+
+            tk::spline s;
+
+            s.set_points(points_x, points_y);
+
+            double target_x = 30;
+            double target_y = s(target_x);
+            double target_dist = pow(pow(target_x,2)+pow(target_y,2),0.5);
+
+            double x = 0;
+
+            for(int i = 0; i < 50 - previous_path_x.size(); i++) {
+              if (reference_vel < car.targetVehicleSpeed - 0.16) {
+                reference_vel += 0.16;
+              } else if (reference_vel > car.targetVehicleSpeed + 0.16) {
+                reference_vel -= 0.16;
+              }
+
+              double N = (target_dist/(.02*reference_vel));
+              double x_point = x+(target_x)/N;
+              double y_point = s(x_point);
+
+              x = x_point;
+
+              double x_reference_point = x_point;
+              double y_reference_point = y_point;
+
+              x_point = (x_reference_point*cos(reference_yaw)-y_reference_point*sin(reference_yaw));
+              y_point = (x_reference_point*sin(reference_yaw)+y_reference_point*cos(reference_yaw));
+
+              x_point += reference_x;
+              y_point += reference_y;
+
+              next_x_vals.push_back(x_point);
+              next_y_vals.push_back(y_point);
+            }
+          }
+          car.targetVehicleSpeed = reference_vel;
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
