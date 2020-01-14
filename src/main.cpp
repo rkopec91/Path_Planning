@@ -140,7 +140,7 @@ int main() {
             double y_difference = reference_y-y_value;
 
             reference_yaw = atan2(y_difference, x_differnece);
-            reference_vel = car.targetVehicleSpeed;
+            reference_vel = car.target_speed;
 
             points_x.push_back(x_value);
             points_x.push_back(reference_x);
@@ -155,14 +155,21 @@ int main() {
           double lane = car.currentLane;
           double next_d = (lane * 4) + 2 + next_move;
 
-          int check_lane = car.calculateLane(next_d);
+          if (next_d < 4) {
+            int check_lane 0;
+          } else if (next_d < 8) {
+            int check_lane 1;
+          } else {
+            int check_lane 2;
+          }
+
           vector<double> front_vehicle = car.getClosestVehicle(frenet[0], check_lane, sensor_fusion, true);
           vector<double> back_vehicle = car.getClosestVehicle(frenet[0], check_lane, sensor_fusion, false);
 
           if (front_vehicle[0] < 10 or back_vehicle[0] < 10 or car.avgScores[check_lane] <= -5) {
             next_d = (lane * 4) + 2;
             if (check_lane != lane) {
-              car.targetVehicleSpeed = car.currentLeadVehicleSpeed;
+              car.target_speed = car.current_lead_speed;
             }
           }
 
@@ -196,9 +203,9 @@ int main() {
             double x = 0;
 
             for(int i = 0; i < 50 - previous_path_x.size(); i++) {
-              if (reference_vel < car.targetVehicleSpeed - 0.16) {
+              if (reference_vel < car.target_speed - 0.16) {
                 reference_vel += 0.16;
-              } else if (reference_vel > car.targetVehicleSpeed + 0.16) {
+              } else if (reference_vel > car.target_speed + 0.16) {
                 reference_vel -= 0.16;
               }
 
@@ -221,7 +228,7 @@ int main() {
               next_y_vals.push_back(y_point);
             }
           }
-          car.targetVehicleSpeed = reference_vel;
+          car.target_speed = reference_vel;
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
