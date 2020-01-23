@@ -158,7 +158,10 @@ coordinates are used instead of x and y because it makes it easier to
 calculate where the vehicle is on the road with turns.  Another funtion that
 I used throughout my code is the spline funtion which was downloaded from
 http://kluge.in-chemnitz.de/opensource/spline/.  This funtion is used to
-create smooth trajectories (lane changes).
+create smooth trajectories (lane changes).  Within the main.cpp file, after the next
+move is properly calculated, the waypoints are calculated to be input into the spline funtion,
+and find the best trajectory for the vehicle to take without exceeding the maximum
+acceleration or the maximum jerk to make the ride smooth and comfortable for the passengers.
 
 Overall, my implementation was a success.  The car was able to navigate through the busy highway without crashing or returning too much jerk.
 
