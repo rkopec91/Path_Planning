@@ -140,6 +140,28 @@ that's just a guess.
 One last note here: regardless of the IDE used, every submitted project must
 still be compilable with cmake and make./
 
+# Implementation Details.
+
+The code has a main.cpp file where the main code of this is project is written.
+I made a car.cpp and car.hpp file for the car class.  Within this class, there is a
+calculateScore private funtion, which is used when there are cars near my car.  This function
+checks all three lanes and basically is used to see what the right move would be (switch
+lanes or stay in the current lane.)  This funtion is used in the planeLane public funtion which returns
+what the next move should be.  It will either stay in the current lane, merge right, or merge left.
+The value it returns is an int for the amount of meters it should move.
+The getClosestVehicle function finds the closest vehicles in my current lane
+and in different lanes.  The car class tries to keep a resonable distance form
+other vehicles on the road.  In order for my vehicle to find it's positon on
+the road more easily, I use the frenet to get the s position (distance along
+the lane) and d position (distance from the center of the road).  These
+coordinates are used instead of x and y because it makes it easier to
+calculate where the vehicle is on the road with turns.  Another funtion that
+I used throughout my code is the spline funtion which was downloaded from
+http://kluge.in-chemnitz.de/opensource/spline/.  This funtion is used to
+create smooth trajectories (lane changes).
+
+Overall, my implementation was a success.  The car was able to navigate through the busy highway without crashing or returning too much jerk.
+
 ## How to write a README
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
