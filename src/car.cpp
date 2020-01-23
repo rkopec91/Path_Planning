@@ -1,15 +1,16 @@
 #include "car.hpp"
 
 int Car::planLane(double s, double d, vector<vector<double>> sensor_fusion) {
+  int lane;
 
   if (d < 4) {
-    int lane 0;
+    lane = 0;
   } else if (d < 8) {
-    int lane 1;
+    lane = 1;
   } else {
-    int lane 2;
+    lane = 2;
   }
-  
+
   int newLane;
   double distance = getClosestVehicle(s, lane, sensor_fusion, true)[0];
 
@@ -103,7 +104,7 @@ int Car::calculateScore(double s, int lane, vector<vector<double>> sensor_fusion
     average_scores[i] += scores[i];
     average_scores[i] /= 10;
   }
-
+  int max;
   if (lane == 0) {
     max = max_element(average_scores.begin(), average_scores.end() - 1) - average_scores.begin();
     return max;

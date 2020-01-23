@@ -155,18 +155,20 @@ int main() {
           double lane = car.currentLane;
           double next_d = (lane * 4) + 2 + next_move;
 
+          int check_lane;
+
           if (next_d < 4) {
-            int check_lane 0;
+            check_lane = 0;
           } else if (next_d < 8) {
-            int check_lane 1;
+            check_lane = 1;
           } else {
-            int check_lane 2;
+            check_lane = 2;
           }
 
           vector<double> front_vehicle = car.getClosestVehicle(frenet[0], check_lane, sensor_fusion, true);
           vector<double> back_vehicle = car.getClosestVehicle(frenet[0], check_lane, sensor_fusion, false);
 
-          if (front_vehicle[0] < 10 or back_vehicle[0] < 10 or car.avgScores[check_lane] <= -5) {
+          if (front_vehicle[0] < 10 or back_vehicle[0] < 10 or car.average_scores[check_lane] <= -5) {
             next_d = (lane * 4) + 2;
             if (check_lane != lane) {
               car.target_speed = car.current_lead_speed;
