@@ -17,7 +17,7 @@ class Car {
     int getLane(double d);
 
     vector<double> getClosestVehicle(double s, int lane, vector<vector<double>> sensor_fusion, bool direction);
-    
+
   private:
     int calculateLaneScore(double s, int lane, vector<vector<double>> sensor_fusion);
     void updateAverageScores(int i, vector <double> scores);

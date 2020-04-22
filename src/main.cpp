@@ -67,12 +67,12 @@ int main() {
 
       if (s != "") {
         auto j = json::parse(s);
-        
+
         string event = j[0].get<string>();
-        
+
         if (event == "telemetry") {
           // j[1] is the data JSON object
-          
+
           // Main car's localization Data
           double car_x = j[1]["x"];
           double car_y = j[1]["y"];
@@ -107,30 +107,27 @@ int main() {
 
           vector<double> points_x;
           vector<double> points_y;
-        
+
           double reference_x = car_x;
           double reference_y = car_y;
-          // Convert cars yaw (degrees) to radians
           double reference_yaw = deg2rad(car_yaw);
           double reference_vel;
 
           next_x_vals.insert(std::end(next_x_vals), std::begin(previous_path_x), std::end(previous_path_x));
           next_y_vals.insert(std::end(next_y_vals), std::begin(previous_path_y), std::end(previous_path_y));
 
-          // Check to see if there is a previous path
           if(current_size_path < 2)
           {
             points_x.push_back(car_x - cos(car_yaw));
             points_x.push_back(car_x);
-            
+
             points_y.push_back(car_y - sin(car_yaw));
             points_y.push_back(car_y);
-            
+
             reference_vel = car_speed;
           }
           else
           {
-            // Get reference point and previous reference point
             reference_x = previous_path_x.end()[-1];
             reference_y = previous_path_y.end()[-1];
             double previous_x_point = previous_path_x.end()[-2];
@@ -141,7 +138,7 @@ int main() {
 
             points_x.push_back(previous_x_point);
             points_x.push_back(reference_x);
-            
+
             points_y.push_back(previous_y_point);
             points_y.push_back(reference_y);
           }
@@ -153,7 +150,7 @@ int main() {
           int next_lane = car.getLane(next_d_position);
           vector<double> front_vehicle = car.getClosestVehicle(frenet_vec[0], next_lane, sensor_fusion, true);
           vector<double> trailing_vehicle = car.getClosestVehicle(frenet_vec[0], next_lane, sensor_fusion, false);
-          
+
           if (front_vehicle[0] < min_distance or trailing_vehicle[0] < min_distance or car.average_scores[next_lane] <= -5) {
             next_d_position = (car.current_lane * 4) + 2;
             if (next_lane != car.current_lane) {
@@ -164,19 +161,19 @@ int main() {
           vector <double> waypoint1 = getXY(car_s+50, next_d_position, map_waypoints_s, map_waypoints_x, map_waypoints_y);
           vector <double> waypoint2 = getXY(car_s+100, next_d_position, map_waypoints_s, map_waypoints_x, map_waypoints_y);
           vector <double> waypoint3 = getXY(car_s+150, next_d_position, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-        
+
           points_x.push_back(waypoint1[0]);
           points_x.push_back(waypoint2[0]);
           points_x.push_back(waypoint3[0]);
           points_y.push_back(waypoint1[1]);
           points_y.push_back(waypoint2[1]);
           points_y.push_back(waypoint3[1]);
-        
+
           if (points_x.size() > 2) {
             for (int i = 0; i < points_x.size(); i++) {
               double move_x_direction = points_x[i] - reference_x;
               double move_y_direction = points_y[i] - reference_y;
-              
+
               points_x[i] = (move_x_direction*cos(0-reference_yaw)-move_y_direction*sin(0-reference_yaw));
               points_y[i] = (move_x_direction*sin(0-reference_yaw)+move_y_direction*cos(0-reference_yaw));
             }
@@ -188,7 +185,7 @@ int main() {
             double target_dist = sqrt(pow(30,2)+pow(s(30),2));
 
             double x_added = 0;
-            
+
             for(int i = 0; i < 50 - current_size_path; i++) {
               if (reference_vel < car.target_speed - 0.16) {
                 reference_vel += 0.16;
@@ -203,16 +200,16 @@ int main() {
 
               double x_point = (x * cos(reference_yaw) - y * sin(reference_yaw));
               double y_point = (x * sin(reference_yaw) + y * cos(reference_yaw));
-              
+
               x_point += reference_x;
               y_point += reference_y;
-              
+
               next_x_vals.push_back(x_point);
               next_y_vals.push_back(y_point);
             }
           }
-        
-          car.target_speed = reference_vel;  // Save the end speed to be used for the next path
+
+          car.target_speed = reference_vel;
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
@@ -246,6 +243,6 @@ int main() {
     std::cerr << "Failed to listen to port" << std::endl;
     return -1;
   }
-  
+
   h.run();
 }
