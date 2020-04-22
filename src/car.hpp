@@ -8,18 +8,20 @@ using namespace std;
 
 class Car {
   public:
-    int currentLane;
-    double current_lead_speed = 22.352 - 0.5;
+    double lead_vehicle_speed = 22.302;
+    int current_lane;
     double target_speed;
-    int carlane=0;
     vector<double> average_scores = {0,0,0};
 
-    int planLane(double s, double d, vector<vector<double>> sensor_fusion);
+    int planLaneTransition(double s, double d, vector<vector<double>> sensor_fusion);
+    int getLane(double d);
 
     vector<double> getClosestVehicle(double s, int lane, vector<vector<double>> sensor_fusion, bool direction);
-
+    
   private:
-    int calculateScore(double s, int lane, vector<vector<double>> sensor_fusion);
+    int calculateLaneScore(double s, int lane, vector<vector<double>> sensor_fusion);
+    void updateAverageScores(int i, vector <double> scores);
+    int compareLanes(int lane);
 };
 
 #endif
