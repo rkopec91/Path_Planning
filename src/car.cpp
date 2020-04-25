@@ -59,8 +59,7 @@ vector<double> Car::getClosestVehicle(double s, int lane, vector<vector<double>>
 }
 
 void Car::updateAverageScores(int i, vector <double> scores) {
-    average_scores[i] = (average_scores[i] * 10) - average_scores[i];
-    average_scores[i] += scores[i];
+    average_scores[i] = (average_scores[i] * 10) - average_scores[i] + scores[i];
     average_scores[i] /= 10;
 }
 

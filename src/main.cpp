@@ -102,21 +102,18 @@ int main() {
            *   sequentially every .02 seconds
            */
 
-
-          int current_size_path = previous_path_x.size();
-
           vector<double> points_x;
           vector<double> points_y;
 
+          double reference_velocity;
           double reference_x = car_x;
           double reference_y = car_y;
           double reference_yaw = deg2rad(car_yaw);
-          double reference_vel;
 
           next_x_vals.insert(std::end(next_x_vals), std::begin(previous_path_x), std::end(previous_path_x));
           next_y_vals.insert(std::end(next_y_vals), std::begin(previous_path_y), std::end(previous_path_y));
 
-          if(current_size_path < 2)
+          if(previous_path_x.size() < 2)
           {
             points_x.push_back(car_x - cos(car_yaw));
             points_x.push_back(car_x);
@@ -124,7 +121,7 @@ int main() {
             points_y.push_back(car_y - sin(car_yaw));
             points_y.push_back(car_y);
 
-            reference_vel = car_speed;
+            reference_velocity = car_speed;
           }
           else
           {
@@ -134,7 +131,7 @@ int main() {
             double previous_y_point = previous_path_y.end()[-2];
 
             reference_yaw = atan2(reference_y-previous_y_point,reference_x-previous_x_point);
-            reference_vel = car.target_speed;
+            reference_velocity = car.target_speed;
 
             points_x.push_back(previous_x_point);
             points_x.push_back(reference_x);
@@ -143,13 +140,13 @@ int main() {
             points_y.push_back(reference_y);
           }
 
-          vector<double> frenet_vec = getFrenet(reference_x, reference_y, reference_yaw, map_waypoints_x, map_waypoints_y);
+          vector<double> frenet_vector = getFrenet(reference_x, reference_y, reference_yaw, map_waypoints_x, map_waypoints_y);
 
-          double next_d_position = (car.current_lane * 4) + 2 + car.planLaneTransition(frenet_vec[0], frenet_vec[1], sensor_fusion);
+          double next_d_position = (car.current_lane * 4) + 2 + car.planLaneTransition(frenet_vector[0], frenet_vector[1], sensor_fusion);
           int min_distance = 10;
           int next_lane = car.getLane(next_d_position);
-          vector<double> front_vehicle = car.getClosestVehicle(frenet_vec[0], next_lane, sensor_fusion, true);
-          vector<double> trailing_vehicle = car.getClosestVehicle(frenet_vec[0], next_lane, sensor_fusion, false);
+          vector<double> front_vehicle = car.getClosestVehicle(frenet_vector[0], next_lane, sensor_fusion, true);
+          vector<double> trailing_vehicle = car.getClosestVehicle(frenet_vector[0], next_lane, sensor_fusion, false);
 
           if (front_vehicle[0] < min_distance or trailing_vehicle[0] < min_distance or car.average_scores[next_lane] <= -5) {
             next_d_position = (car.current_lane * 4) + 2;
@@ -186,30 +183,30 @@ int main() {
 
             double x_added = 0;
 
-            for(int i = 0; i < 50 - current_size_path; i++) {
-              if (reference_vel < car.target_speed - 0.16) {
-                reference_vel += 0.16;
-              } else if (reference_vel > car.target_speed + 0.16) {
-                reference_vel -= 0.16;
+            for(int i = 0; i < 50 - previous_path_x.size(); i++) {
+              if (reference_velocity < car.target_speed - 0.16) {
+                reference_velocity += 0.16;
+              } else if (reference_velocity > car.target_speed + 0.16) {
+                reference_velocity -= 0.16;
               }
 
-              double x = x_added+(30)/(target_dist/(.02*reference_vel));
+              double x = x_added+(30)/(target_dist/(.02*reference_velocity));
               double y = s(x);
 
               x_added = x;
 
-              double x_point = (x * cos(reference_yaw) - y * sin(reference_yaw));
-              double y_point = (x * sin(reference_yaw) + y * cos(reference_yaw));
+              double next_x_point = (x * cos(reference_yaw) - y * sin(reference_yaw));
+              double next_y_point = (x * sin(reference_yaw) + y * cos(reference_yaw));
 
-              x_point += reference_x;
-              y_point += reference_y;
+              next_x_point += reference_x;
+              next_y_point += reference_y;
 
-              next_x_vals.push_back(x_point);
-              next_y_vals.push_back(y_point);
+              next_x_vals.push_back(next_x_point);
+              next_y_vals.push_back(next_y_point);
             }
           }
 
-          car.target_speed = reference_vel;
+          car.target_speed = reference_velocity;
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;

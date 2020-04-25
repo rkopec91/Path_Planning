@@ -12,16 +12,17 @@ class Car {
     int current_lane;
     double target_speed;
     vector<double> average_scores = {0,0,0};
+    int next_lane;
 
     int planLaneTransition(double s, double d, vector<vector<double>> sensor_fusion);
-    int getLane(double d);
+    static int getLane(double d);
 
-    vector<double> getClosestVehicle(double s, int lane, vector<vector<double>> sensor_fusion, bool direction);
+    vector<double> getClosestVehicle(double s, int lane, vector<vector<double>> sensor_fusion, bool front);
 
   private:
+    int compareLanes(int lane);
     int calculateLaneScore(double s, int lane, vector<vector<double>> sensor_fusion);
     void updateAverageScores(int i, vector <double> scores);
-    int compareLanes(int lane);
 };
 
 #endif
