@@ -96,7 +96,7 @@ int Car::calculateLaneScore(double s, int lane, vector<vector<double>> sensor_fu
         scores[i] -= 5; 
       }
       scores[i] += 1 - (10/(front_vehicle[1]/2));
-      scores[i] += 1 / (trailing_vehicle[1]/2);
+      scores[i] -= 1 / (trailing_vehicle[1]/2);
 
       scores[i] += 1 - (10/(front_vehicle[0]/3));
       scores[i] += 1 - (10/(trailing_vehicle[0]/3));
